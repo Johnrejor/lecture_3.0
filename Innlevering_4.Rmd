@@ -1,0 +1,48 @@
+---
+title: "Innlevering 4"
+author: "john"
+date: "8 oktober 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readr)
+library(tidyverse)
+install.packages("rvest")
+library(rvest)
+
+url <- read_html("https://w2.brreg.no/kunngjoring/kombisok.jsp?datoFra=01.01.2018&datoTil=08.10.2018&id_region=100&id_fylke=19&id_kommune=-+-+-&id_niva1=51&id_niva2=-+-+-&id_bransje1=0")
+
+# Henter tabell nr 4 fra siden
+Konkurs_bedrifter <- html_table(html_nodes(url, "table")[[4]], fill = TRUE)
+
+head(Konkurs_bedrifter, n = 15)
+# Rydder dataene
+
+Konkurs_bedrifter <- Konkurs_bedrifter[2:8]
+Konkurs_bedrifter <- Konkurs_bedrifter[-2]
+Konkurs_bedrifter <- Konkurs_bedrifter[-3]
+Konkurs_bedrifter <- Konkurs_bedrifter[-4]
+
+Konkurs_bedrifter <- Konkurs_bedrifter[!apply(Konkurs_bedrifter == "", 1, all),]
+Konkurs_bedrifter <- Konkurs_bedrifter[-1:-2,]
+
+# setter ny navn til kolonnene
+colnames(Konkurs_bedrifter)[1:4] <- c("Bedrift", "Bedrift_number", "Dato", "Type")
+# rydder opp i dataene
+Konkurs_bedrifter$Bedrift_number <- str_replace_all(string= Konkurs_bedrifter$Bedrift_number, pattern=" ", repl="")
+Konkurs_bedrifter$Bedrift_number <- as.numeric(Konkurs_bedrifter$Bedrift_number)
+
+Konkurs_bedrifter$Dato <- as.Date(Konkurs_bedrifter$Dato, "%d.%m.%Y")
+
+Konkurs_bedrifter2 <- Konkurs_bedrifter %>%
+  filter(nchar(Bedrift_number) > 6)
+Konkurs_bedrifter <- Konkurs_bedrifter %>%
+  filter(Type == "Tvangsoppløsning")
+
+ggplot(Konkurs_bedrifter1, aes(Type)) + geom_bar() + labs(title = "Andel av sakene som er tvangsoppløsning", x = "Type", y = "Antall")
+``` 
